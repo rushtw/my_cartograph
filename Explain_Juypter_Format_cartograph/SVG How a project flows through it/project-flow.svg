@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 980" width="1200" height="980" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">How a project flows through my_cartograph</title>
+  <desc id="d">A path to a zip or a folder goes through the landing page and a route handler. A zip is unpacked to a temporary folder; a folder is read in place. Both then go through select, parse and store. The result is written to data/project-id. The map page and Explain read from there.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-dash" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="980" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+
+  <!-- legend -->
+  <g font-size="12" fill="#334155">
+    <rect x="860" y="22" width="14" height="14" rx="3" fill="#dbeafe" stroke="#3b82f6"/><text x="880" y="34">where it comes from</text>
+    <rect x="1020" y="22" width="14" height="14" rx="3" fill="#f1f5f9" stroke="#64748b"/><text x="1040" y="34">a stage</text>
+    <rect x="860" y="44" width="14" height="14" rx="3" fill="#fef3c7" stroke="#d97706"/><text x="880" y="56">written to data/</text>
+    <rect x="1020" y="44" width="14" height="14" rx="3" fill="#ede9fe" stroke="#7c3aed"/><text x="1040" y="56">the model</text>
+  </g>
+
+  <!-- 1 landing page -->
+  <rect x="420" y="40" width="360" height="62" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="600" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="#1e3a8a">Landing page  /</text>
+  <text x="600" y="87" text-anchor="middle" font-size="13" fill="#1e3a8a">type the path to a .zip or to a folder</text>
+  <path d="M600,102 V130" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- 2 route handler -->
+  <rect x="380" y="130" width="440" height="64" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="600" y="156" text-anchor="middle" font-size="15" font-weight="700" fill="#0f172a">POST /api/projects  (route handler)</text>
+  <text x="600" y="177" text-anchor="middle" font-size="13" fill="#334155">checks the path exists and which kind it is</text>
+
+  <!-- split -->
+  <path d="M600,194 V238 H330 V292" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M600,238 H870 V292" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <text x="470" y="231" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">a .zip file</text>
+  <text x="735" y="231" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">a folder</text>
+
+  <!-- zip branch -->
+  <rect x="120" y="292" width="420" height="132" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="140" y="318" font-size="15" font-weight="700" fill="#1e3a8a">Stage 1 · Unpack zip</text>
+  <g font-size="13" fill="#1e3a8a">
+    <text x="140" y="342">• unpacked into a temporary folder, never into data/</text>
+    <text x="140" y="362">• refuses absolute paths, "..", symlinks, lying sizes</text>
+    <text x="140" y="382">• skips node_modules and dot-folders (kept as empty</text>
+    <text x="150" y="400">folders, so the parser still lists them as excluded)</text>
+    <text x="140" y="418">• empty stand-ins for images, css and the like</text>
+  </g>
+
+  <!-- folder branch -->
+  <rect x="660" y="292" width="420" height="132" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="680" y="318" font-size="15" font-weight="700" fill="#1e3a8a">Read the folder in place</text>
+  <g font-size="13" fill="#1e3a8a">
+    <text x="680" y="342">• no unpacking and no copy: the parser walks it as it is</text>
+    <text x="680" y="362">• read-only: nothing in your folder is written or deleted</text>
+    <text x="680" y="382">• node_modules and dot-folders are skipped by the</text>
+    <text x="690" y="400">walker and listed as excluded, with their reason</text>
+    <text x="680" y="418">• a folder of several projects works: each nested app is found</text>
+  </g>
+
+  <!-- merge -->
+  <path d="M330,424 V454 H600 V482" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M870,424 V454 H600" stroke="#475569" stroke-width="1.8" fill="none"/>
+
+  <!-- stage 2 select -->
+  <rect x="360" y="482" width="480" height="64" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="380" y="508" font-size="15" font-weight="700" fill="#0f172a">Stage 2 · Select files</text>
+  <text x="380" y="530" font-size="13" fill="#334155">which files become nodes; lines, sha256; skipped ones counted, with a reason</text>
+  <path d="M600,546 V574" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- stage 3 parse -->
+  <rect x="360" y="574" width="480" height="84" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="380" y="600" font-size="15" font-weight="700" fill="#0f172a">Stage 3 · Parse imports</text>
+  <text x="380" y="622" font-size="13" fill="#334155">ts-morph reads import, export from, import("..."), require("...")</text>
+  <text x="380" y="642" font-size="13" fill="#334155">each resolved to a real file or reported unresolved, with a reason</text>
+  <path d="M600,658 V686" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- stage 4 store -->
+  <rect x="360" y="686" width="480" height="100" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="380" y="712" font-size="15" font-weight="700" fill="#78350f">Stage 4 · Store project  →  data/&lt;project id&gt;/</text>
+  <g font-size="13" fill="#78350f">
+    <text x="380" y="735">meta.json · result.json · sources.json</text>
+    <text x="380" y="755">id = hash of the project's files, so the same code is the</text>
+    <text x="380" y="773">same project, whatever it was called or packed as</text>
+  </g>
+
+  <!-- cleanup note -->
+  <rect x="890" y="686" width="280" height="100" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="5 4"/>
+  <g font-size="13" fill="#334155">
+    <text x="906" y="712" font-weight="700">When it ends</text>
+    <text x="906" y="734">The temporary unpacked copy</text>
+    <text x="906" y="752">is deleted. Your zip or folder</text>
+    <text x="906" y="770">is never changed.</text>
+  </g>
+  <path d="M840,736 H890" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4" fill="none"/>
+
+  <!-- progress stream back to the page -->
+  <path d="M360,520 H70 V71 H420" stroke="#64748b" stroke-width="1.6" stroke-dasharray="6 5" fill="none" marker-end="url(#arrow-dash)"/>
+  <path d="M360,616 H70" stroke="#64748b" stroke-width="1.6" stroke-dasharray="6 5" fill="none"/>
+  <path d="M360,736 H70" stroke="#64748b" stroke-width="1.6" stroke-dasharray="6 5" fill="none"/>
+  <path d="M70,736 V520" stroke="#64748b" stroke-width="1.6" stroke-dasharray="6 5" fill="none"/>
+  <text transform="translate(52,330) rotate(-90)" text-anchor="middle" font-size="12" fill="#475569">each stage line is streamed back to the page as it happens (no polling)</text>
+
+  <!-- split to the two users of the stored project -->
+  <path d="M600,786 V822 H370 V850" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M600,822 H870 V850" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <text x="600" y="808" text-anchor="middle" font-size="12" fill="#475569">later, any time, from the stored-projects list</text>
+
+  <!-- map page -->
+  <rect x="120" y="850" width="500" height="112" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="140" y="876" font-size="15" font-weight="700" fill="#0f172a">Map page  /projects/&lt;id&gt;</text>
+  <g font-size="13" fill="#334155">
+    <text x="140" y="898">server reads result.json and checks it against the parser's contract</text>
+    <text x="140" y="918">the browser does all the graph work: folding, layout, highlight,</text>
+    <text x="140" y="936">blast radius, insights. No request is made when you click.</text>
+  </g>
+
+  <!-- explain -->
+  <rect x="660" y="850" width="420" height="112" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="680" y="876" font-size="15" font-weight="700" fill="#4c1d95">Explain  (server action, on click)</text>
+  <g font-size="13" fill="#4c1d95">
+    <text x="680" y="898">file text from sources.json; its hash must match the parser's</text>
+    <text x="680" y="918">ai-cache.json hit → answer, marked cached, no model call</text>
+    <text x="680" y="936">miss → Groq openai/gpt-oss-20b → cache → answer</text>
+  </g>
+</svg>
