@@ -52,17 +52,17 @@
 
   <rect x="60" y="306" width="260" height="66" rx="8" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
   <text x="190" y="330" text-anchor="middle" font-size="13" font-weight="700" fill="#1e3a8a">load-form.tsx  (client)</text>
-  <text x="190" y="350" text-anchor="middle" font-size="12" fill="#1e3a8a">XMLHttpRequest, body = the zip</text>
+  <text x="190" y="350" text-anchor="middle" font-size="12" fill="#1e3a8a">fetch, body = { path } (not the files)</text>
   <path d="M320,339 H430" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
   <text x="375" y="331" text-anchor="middle" font-size="11" fill="#475569">POST</text>
 
   <rect x="430" y="306" width="300" height="66" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
   <text x="580" y="330" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">api/projects/route.ts</text>
-  <text x="580" y="350" text-anchor="middle" font-size="12" fill="#334155">streams the body to disk, then runs</text>
+  <text x="580" y="350" text-anchor="middle" font-size="12" fill="#334155">checks the path, then runs</text>
   <path d="M730,339 H790" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
 
   <rect x="790" y="306" width="370" height="66" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
-  <text x="975" y="330" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">ingestZip()  extract → select → parse → store</text>
+  <text x="975" y="330" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">ingestPath()  [extract] → select → parse → store</text>
   <text x="975" y="350" text-anchor="middle" font-size="12" fill="#334155">calls report(stage, message) at each step</text>
 
   <path d="M975,372 V410" stroke="#475569" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>

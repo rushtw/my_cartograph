@@ -1,5 +1,5 @@
-import { createHash, randomBytes } from "node:crypto";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { serializeParseResult } from "../parser/contract.ts";
@@ -9,9 +9,10 @@ import { commitProject, projectExists, type ProjectMeta } from "../store/project
 import { Zip, ZipError, type ZipEntry } from "../zip.ts";
 import type { Stage } from "./stages.ts";
 
-// Zip in, stored project out: extract → select → parse → store. The parser is
-// handed a plain folder, exactly as it would be on the command line; nothing
-// in here decides what an import means.
+// A path to a zip or a folder in, stored project out: extract → select → parse
+// → store. A folder has no extract stage; it is read where it sits and never
+// written to. The parser is handed a plain folder, exactly as it would be on
+// the command line; nothing in here decides what an import means.
 
 export class IngestError extends Error {
   override name = "IngestError";
@@ -32,25 +33,48 @@ const JSON_FILE = /\.json$/;
 export type Report = (stage: Stage, message: string) => void;
 export type Outcome = { id: string; alreadyStored: boolean };
 
-export async function ingestZip(zipPath: string, displayName: string, report: Report): Promise<Outcome> {
-  const workdir = await mkdtemp(path.join(tmpdir(), "my-cartograph-"));
+export type Source = { kind: "zip" | "folder"; path: string; name: string };
+
+// The path is typed by the one person using this on their own machine, so it
+// is trusted to point anywhere; it only has to be a real zip or folder.
+export async function inspectPath(raw: string): Promise<Source> {
+  // Explorer's "Copy as path" wraps the path in quotes.
+  const given = raw.trim().replace(/^"(.*)"$/, "$1").trim();
+  if (!given) throw new IngestError("No path was given", "select");
+  if (!path.isAbsolute(given)) throw new IngestError("Give the full path, starting with a drive letter such as C:\\", "select");
+  const resolved = path.resolve(given);
+  const info = await stat(resolved).catch(() => null);
+  if (!info) throw new IngestError(`Nothing exists at ${resolved}`, "select");
+  if (info.isDirectory()) return { kind: "folder", path: resolved, name: path.basename(resolved) || resolved };
+  if (info.isFile() && /\.zip$/i.test(resolved)) return { kind: "zip", path: resolved, name: path.basename(resolved).replace(/\.zip$/i, "") };
+  throw new IngestError("That is a file, but not a .zip. Give a .zip or a folder", "select");
+}
+
+export async function ingestPath(source: Source, report: Report): Promise<Outcome> {
+  const displayName = source.name;
+  // Only a zip needs a working copy; a folder is read in place.
+  const workdir = source.kind === "zip" ? await mkdtemp(path.join(tmpdir(), "my-cartograph-")) : null;
   // The last stage reported is where a failure is blamed.
-  let stage: Stage = "extract";
+  let stage: Stage = source.kind === "zip" ? "extract" : "select";
   const enter: Report = (next, message) => {
     stage = next;
     report(next, message);
   };
   try {
-    enter("extract", "Reading the zip's directory");
-    const zip = await openZip(zipPath);
-    try {
-      await extractTo(zip, workdir, enter);
-    } finally {
-      await zip.close();
+    let root = source.path;
+    if (workdir) {
+      enter("extract", "Reading the zip's directory");
+      const zip = await openZip(source.path);
+      try {
+        await extractTo(zip, workdir, enter);
+      } finally {
+        await zip.close();
+      }
+      root = workdir;
     }
 
     enter("select", "Walking the project for TypeScript and JavaScript files");
-    const selection = selectFiles(workdir);
+    const selection = selectFiles(root);
     const { candidates, skipped } = selection.walk;
 
     enter("parse", `Parsing ${count(candidates.length, "file")}${skipped.length ? `, ${skipped.length} skipped` : ""}`);
@@ -59,7 +83,7 @@ export async function ingestZip(zipPath: string, displayName: string, report: Re
     const parsed = parseSelection(selection);
 
     enter("store", `Storing ${count(parsed.files.length, "file")} and ${count(parsed.edges.length, "edge")}`);
-    // The root is the temporary folder; what's stored is the project's name.
+    // The root is a temporary folder or the user's own; what's stored is the project's name.
     const result: ParseResult = { ...parsed, root: displayName };
     const id = fingerprint(result);
     if (await projectExists(id)) return { id, alreadyStored: true };
@@ -74,7 +98,7 @@ export async function ingestZip(zipPath: string, displayName: string, report: Re
       skipped: result.coverage.files.skipped,
       unresolved: result.coverage.imports.total.unresolved,
     };
-    // The zip is deleted once loaded, so Explain reads from this copy of the
+    // The source may change or go away, so Explain reads from this copy of the
     // parsed files' text instead. Only files the parser read are kept.
     const parsedPaths = new Set(result.files.map((f) => f.path));
     const sources: Record<string, string> = {};
@@ -85,7 +109,7 @@ export async function ingestZip(zipPath: string, displayName: string, report: Re
     if (error instanceof IngestError) throw error;
     throw new IngestError(error instanceof Error ? error.message : String(error), stage);
   } finally {
-    await rm(workdir, { recursive: true, force: true });
+    if (workdir) await rm(workdir, { recursive: true, force: true });
   }
 }
 
@@ -192,8 +216,4 @@ function wrapperOf(entries: readonly ZipEntry[]): string {
 
 function count(n: number, noun: string): string {
   return `${n.toLocaleString("en-US")} ${noun}${n === 1 ? "" : "s"}`;
-}
-
-export function incomingName(): string {
-  return `.incoming-${randomBytes(6).toString("hex")}.zip`;
 }
